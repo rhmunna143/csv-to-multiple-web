@@ -54,6 +54,7 @@ csv-to-web/
    ```bash
    npm install
    ```
+   - Don't forget to install dependencies on `the src/template/` directory also.
 
 3. **Configure environment (optional)**
    Edit `.env` file to customize paths:
