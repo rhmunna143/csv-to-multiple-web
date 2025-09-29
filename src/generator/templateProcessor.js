@@ -2,19 +2,36 @@ const fs = require('fs-extra');
 const path = require('path');
 
 /**
+ * Escape string for JavaScript context
+ * @param {string} str - String to escape
+ * @returns {string} Escaped string
+ */
+function escapeForJS(str) {
+  return str.replace(/'/g, "\\'").replace(/"/g, '\\"').replace(/\n/g, '\\n').replace(/\r/g, '\\r');
+}
+
+/**
  * Process template replacements in file content
  * @param {string} content - File content to process
  * @param {Object} data - Data object with replacement values
+ * @param {string} filePath - File path for context-aware processing
  * @returns {string} Processed content
  */
-function processTemplate(content, data) {
+function processTemplate(content, data, filePath = '') {
   let processedContent = content;
 
   // Replace dynamic variables {{ variable }}
   processedContent = processedContent.replace(/\{\{\s*(\w+)\s*\}\}/g, (match, key) => {
     const value = data[key];
     if (value !== undefined && value !== null) {
-      return String(value);
+      let processedValue = String(value);
+      
+      // If this is a JavaScript file, escape quotes properly
+      if (filePath.endsWith('.js') || filePath.endsWith('.jsx')) {
+        processedValue = escapeForJS(processedValue);
+      }
+      
+      return processedValue;
     }
     console.warn(`Warning: Template variable '${key}' not found in data`);
     return match; // Keep original if not found
@@ -42,7 +59,7 @@ function processTemplate(content, data) {
 async function processFile(filePath, data) {
   try {
     const content = await fs.readFile(filePath, 'utf8');
-    const processedContent = processTemplate(content, data);
+    const processedContent = processTemplate(content, data, filePath);
     await fs.writeFile(filePath, processedContent, 'utf8');
   } catch (error) {
     console.error(`Error processing file ${filePath}:`, error.message);
@@ -110,5 +127,6 @@ module.exports = {
   processTemplate,
   processFile,
   getAllFiles,
-  processDirectory
+  processDirectory,
+  escapeForJS
 };
